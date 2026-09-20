@@ -1,0 +1,17 @@
+{
+  "base": "8d126c4a672936fde5a21d9133c352b18d4299a5",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "baseline": {
+    "libopencv_dnn.so.5.1.0": "fa81aa40b026a27267ed35dc630365fee402c1938665c41716a316620e263be4"
+  },
+  "target": "Legacy CPU Deconvolution layer in OpenCV 5.x. ConvTranspose2 is unchanged.",
+  "candidate": {
+    "libopencv_dnn.so.5.1.0": "917346637bc1f97eb73d43f2fbfb395b09165fe2007cb29c3067798f1b6545ba"
+  },
+  "cpu": "Intel Core Ultra 7 255H",
+  "platform": "Ubuntu 24.04, WSL2, x86_64",
+  "build": "Release, SSE3 baseline, AVX2 dispatch, pthreads, no IPP, no OpenCL, no external BLAS",
+  "text_size_before_bytes": 14468543,
+  "text_size_after_bytes": 14468695,
+  "commit": "d5112e3b729239b9de759453a6fd78e1a90e1c08"
+}
