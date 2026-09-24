@@ -1,36 +1,78 @@
 # CPU Deconvolution measurements
 
 The base is OpenCV `5.x` at `8d126c4a672936fde5a21d9133c352b18d4299a5`.
-The current patch is `ae8e518fdf49c9a8931cc2300707b2976d1cde09`.
-The patch changes the CPU `Deconvolution` layer. The new ONNX `ConvTranspose2`
-layer uses a different implementation. These measurements do not describe that
-layer or a complete model.
+The current patch is `623c587ad91f3290e36a2c4f70163c9e30c687c2`.
+The patch changes the legacy CPU `Deconvolution` layer. The new ONNX
+`ConvTranspose2` layer has a separate implementation. These are layer results,
+not complete-model results. ARM hardware was not tested.
+
+The code builds valid tap tables for each axis and shares them across channels
+and workers. It decodes the outer coordinates once per output row. For horizontal
+stride 1 or 2, it uses 128-bit SIMD where four inputs are consecutive and the tap
+set stays the same. Other positions use the scalar loop. Each output keeps the
+original sum order. The pointwise path adds bias one channel segment at a time.
+GEMM and output ownership do not change.
 
 The test host is an Intel Core Ultra 7 255H with Ubuntu 24.04 under WSL2.
 The compiler is GCC 13.3.0. The build uses Release mode, SSE3 with AVX2 dispatch,
 and the pthreads backend. IPP, OpenCL, and external BLAS libraries are disabled.
+The SIMD run table adds one `size_t` per output column when used. For the 128-square
+2x2 case, this is 2,048 bytes shared by all workers. This is an array size,
+not a process memory measurement.
 
-`review_20260924/bench_base.json` has five pairs of separate processes per case. Each process
-has two warmup calls and 15 measured calls. The order of the two versions
-alternates between pairs. Each reported time is a median of the process medians.
-Each reduction is a median of the five paired reductions. The minimum and
-maximum paired reductions are also included. CPU affinity is 0 for one thread,
-and 0 through 3 for four threads. The four-thread results have more variation.
-The host is not an isolated benchmark server. No build ran during measurement.
+## Results and limits
 
-The measured `forward()` call includes GEMM, tap table setup, output reconstruction, and bias.
-Layer setup and memory allocation for the input, weights, and output are outside
-the timer. `review_20260924/bench_net.json` uses a single-layer `Net`. It sets the input
-again before each measured forward call. The input setup is outside the timer.
-Both probes compare every output byte between the two versions.
+One-thread layer results against upstream:
 
-`review_20260924/bench_previous.json` compares the previous PR commit `eafeffd8`
-with the current patch. It uses the same cases and settings. For small inputs
-with four threads, the first base comparison has slower pairs. The repeat and
-same-binary control both have large variation. Those results are in
-`review_20260924/bench_tiny_repeat.json` and `review_20260924/bench_tiny_control.json`.
-Do not use these small cases to claim a stable speedup or no regression.
-The older `bench_final.json` describes the previous implementation.
+| Input, channels in/out | Kernel, stride | Base | PR | Speedup |
+| --- | --- | ---: | ---: | ---: |
+| 128×128, 16/16 | 1×1, 1 | 2.882 ms | 0.095 ms | 30.4× |
+| 128×128, 16/16 | 2×2, 2 | 72.744 ms | 0.932 ms | 78.1× |
+| 368×368, 16/16 | 2×2, 2 | 616.456 ms | 7.997 ms | 77.1× |
+| 64×64, 16/16 | 3×3, 1, pad 1 | 11.121 ms | 0.349 ms | 31.8× |
+| 16×16×16, 8/8 | 3×3×3, 1 | 22.282 ms | 0.766 ms | 29.1× |
+
+All current results are in `row_simd_20260925/`:
+
+| File | Comparison |
+| --- | --- |
+| `bench_base_final.json` | Upstream `8d126c4a` to the final patch |
+| `bench_final.json` | Previous PR `ae8e518f` to the final patch |
+| `bench_row.json` | Previous PR to row-only commit `7a21734a` |
+| `bench_simd_vs_row.json` | Row-only commit to the final patch |
+| `bench_net_final.json` | Upstream to final, through a single-layer `Net` |
+| `bench_edges_final.json` | Short rows, horizontal stride 1, 2, and 3 |
+| `bench_tiny_final.json`, `bench_tiny_control.json` | Small-input repeat and same-binary control |
+| `verify_final.json` | 768 output comparisons with upstream |
+| `table_storage.json` | Table sizes for the measured shapes |
+
+The two main comparisons use five pairs of separate processes per case, with
+two warmup calls and 15 measured calls per process. Version order alternates.
+Reported times are medians of process medians. Reductions are medians of paired
+reductions. The files also contain each sample and the minimum and maximum
+paired reductions. The row and Net comparisons use three pairs. CPU affinity
+is 0 for one thread, and 0 through 3 for four threads. The host is not an isolated
+benchmark server. No build ran during measurement.
+
+The measured `forward()` call includes GEMM, table setup, output reconstruction,
+and bias. Layer setup and input, weight, and output allocation are outside the
+timer. The Net probe sets the input again before each measured forward call;
+input setup is outside the timer. Both probes compare every output byte.
+
+Small inputs do not show a stable gain. Some pairs are slower. The longer repeat
+uses nine pairs and 1,001 calls per process. Its four-thread differences are close
+to zero, but the same-binary control also varies. Do not claim no regression for
+all small inputs.
+
+The first SIMD version built a run table even when no four-input run could fit.
+The large-kernel, small-input case was about 9% slower in `bench_edges.json`.
+The final version skips that table for these shapes. The regression did not repeat
+in `bench_edges_final.json`. The other edge cases still have small timing changes.
+
+`profile.json` and `profile_summary.json` are diagnostic results from the SIMD
+version before this guard. The source patch is `repro/profile.patch`. Timer output
+is inside the forward call; do not use those total times as layer benchmarks.
+The old `review_20260924/` and root result files describe earlier versions.
 
 ## Repeat the measurements
 
@@ -91,19 +133,22 @@ output padding, a shape change, and one or four threads. The separate probe
 checks 192 configurations with normal and wide finite input values at both
 thread counts: 768 comparisons and 5,417,400 output values.
 
-For the extracted helper check, save the base source as
-`deconvolution_before.cpp` in this directory, then run:
+For the extracted helper check against the previous PR version, run:
 
 ```bash
-python3 -B check_col2im.py
-ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./col2im_check
+python3 -B check_col2im.py --baseline-ref ae8e518f --wide-rows --output-dir helper-check
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./helper-check/col2im_check
 ```
 
 This check extracts both `Col2ImInvoker` implementations. It uses ASan and UBSan
 for the extracted code and links the normal OpenCV core library. It is not a
 sanitizer build of the full library. The 192 cases cover 1D, 2D, and 3D, special
 float values, and output guard values. They also check that the column input
-does not change.
+does not change. The final native and forced scalar checks are in
+`sanitizer_final.json` and `sanitizer_scalar.json`. Their source files are in
+`repro/final/`. The scalar source sets `CV_SIMD128` to zero. The earlier checks
+also tested special bias values and the C++ vector implementation.
+`CV_FORCE_SIMD128_CPP` does not disable the SIMD branch.
 
 Nontrivial 1D full-layer cases failed on the base during test development.
 The failure is in the existing 1D shape and workspace handling. This patch does

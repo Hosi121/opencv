@@ -1,0 +1,127 @@
+{
+  "method": "Calculated from the input shapes on this 64-bit build. Counts exclude vector objects and allocator metadata. Capacity assumes libstdc++ vector growth by a factor of two. This is not a process memory measurement.",
+  "rows": [
+    {
+      "case": "pointwise_tiny",
+      "output": [
+        1,
+        1
+      ],
+      "valid_axis_taps": [
+        1,
+        1
+      ],
+      "table_values_bytes": 0,
+      "table_capacity_bytes_gcc": 0,
+      "worker_index_bytes": 0,
+      "simd_run_bytes": 0
+    },
+    {
+      "case": "pointwise",
+      "output": [
+        128,
+        128
+      ],
+      "valid_axis_taps": [
+        128,
+        128
+      ],
+      "table_values_bytes": 0,
+      "table_capacity_bytes_gcc": 0,
+      "worker_index_bytes": 0,
+      "simd_run_bytes": 0
+    },
+    {
+      "case": "ocr128",
+      "output": [
+        256,
+        256
+      ],
+      "valid_axis_taps": [
+        256,
+        256
+      ],
+      "table_values_bytes": 10256,
+      "table_capacity_bytes_gcc": 10256,
+      "worker_index_bytes": 48,
+      "simd_run_bytes": 2048
+    },
+    {
+      "case": "ocr368",
+      "output": [
+        736,
+        736
+      ],
+      "valid_axis_taps": [
+        736,
+        736
+      ],
+      "table_values_bytes": 29456,
+      "table_capacity_bytes_gcc": 34064,
+      "worker_index_bytes": 48,
+      "simd_run_bytes": 5888
+    },
+    {
+      "case": "overlap",
+      "output": [
+        64,
+        64
+      ],
+      "valid_axis_taps": [
+        190,
+        190
+      ],
+      "table_values_bytes": 4592,
+      "table_capacity_bytes_gcc": 5648,
+      "worker_index_bytes": 48,
+      "simd_run_bytes": 512
+    },
+    {
+      "case": "dilated",
+      "output": [
+        96,
+        68
+      ],
+      "valid_axis_taps": [
+        95,
+        194
+      ],
+      "table_values_bytes": 4184,
+      "table_capacity_bytes_gcc": 4944,
+      "worker_index_bytes": 48,
+      "simd_run_bytes": 544
+    },
+    {
+      "case": "three_d",
+      "output": [
+        18,
+        18,
+        18
+      ],
+      "valid_axis_taps": [
+        48,
+        48,
+        48
+      ],
+      "table_values_bytes": 1752,
+      "table_capacity_bytes_gcc": 2136,
+      "worker_index_bytes": 72,
+      "simd_run_bytes": 144
+    },
+    {
+      "case": "tiny",
+      "output": [
+        2,
+        2
+      ],
+      "valid_axis_taps": [
+        2,
+        2
+      ],
+      "table_values_bytes": 80,
+      "table_capacity_bytes_gcc": 80,
+      "worker_index_bytes": 48,
+      "simd_run_bytes": 0
+    }
+  ]
+}

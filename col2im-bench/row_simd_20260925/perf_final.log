@@ -1,0 +1,38 @@
+[ERROR:0@0.001] global persistence.cpp:586 open Can't open file: 'dnn.xml' in read mode
+TEST: Skip tests with tags: 'mem_6gb', 'verylong'
+CTEST_FULL_OUTPUT
+OpenCV version: 5.1.0-dev
+OpenCV VCS version: ae8e518-dirty
+Build type: Release
+Compiler: /usr/bin/c++  (ver 13.3.0)
+Algorithm hint: ALGO_HINT_ACCURATE
+HAL: NO
+Parallel framework: pthreads (nthreads=1)
+CPU features: SSE SSE2 SSE3 *AVX2
+Note: Google Test filter = *DeconvolutionCoordinates*
+[==========] Running 6 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 6 tests from DeconvolutionCoordinates_forward
+[ RUN      ] DeconvolutionCoordinates_forward.forward/0, where GetParam() = (2, 1)
+[ PERFSTAT ]    (samples=10   mean=0.09   median=0.08   min=0.08   stddev=0.00 (1.6%))
+[       OK ] DeconvolutionCoordinates_forward.forward/0 (2 ms)
+[ RUN      ] DeconvolutionCoordinates_forward.forward/1, where GetParam() = (2, 2)
+[ PERFSTAT ]    (samples=30   mean=0.96   median=0.94   min=0.91   stddev=0.06 (6.5%))
+[       OK ] DeconvolutionCoordinates_forward.forward/1 (34 ms)
+[ RUN      ] DeconvolutionCoordinates_forward.forward/2, where GetParam() = (2, 3)
+[ PERFSTAT ]    (samples=10   mean=1.30   median=1.29   min=1.26   stddev=0.04 (3.0%))
+[       OK ] DeconvolutionCoordinates_forward.forward/2 (18 ms)
+[ RUN      ] DeconvolutionCoordinates_forward.forward/3, where GetParam() = (3, 1)
+[ PERFSTAT ]    (samples=30   mean=0.10   median=0.09   min=0.08   stddev=0.02 (18.5%))
+[       OK ] DeconvolutionCoordinates_forward.forward/3 (3 ms)
+[ RUN      ] DeconvolutionCoordinates_forward.forward/4, where GetParam() = (3, 2)
+[ PERFSTAT ]    (samples=30   mean=0.68   median=0.66   min=0.64   stddev=0.06 (8.7%))
+[       OK ] DeconvolutionCoordinates_forward.forward/4 (24 ms)
+[ RUN      ] DeconvolutionCoordinates_forward.forward/5, where GetParam() = (3, 3)
+[ PERFSTAT ]    (samples=10   mean=1.66   median=1.64   min=1.62   stddev=0.04 (2.3%))
+[       OK ] DeconvolutionCoordinates_forward.forward/5 (19 ms)
+[----------] 6 tests from DeconvolutionCoordinates_forward (100 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 1 test case ran. (100 ms total)
+[  PASSED  ] 6 tests.

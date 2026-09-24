@@ -1,0 +1,2 @@
+#define CV_SIMD128_CPP 1
+#define CV_SIMD128 1

@@ -1,0 +1,24 @@
+--- a/modules/dnn/src/layers/deconvolution_layer.cpp
++++ b/modules/dnn/src/layers/deconvolution_layer.cpp
+@@ -960,8 +960,10 @@
+                     Mat curBiasMat = biasesMat.rowRange(_Range(g * outGroupCn, outGroupCn));
+ 
+                     //gemm(wghtMat, convMat, 1, colMat, 0, colMat, 0);
++                    const int64 gemm_start = getTickCount();
+                     MatMulInvoker mminvoker(wghtMat, convMat, colMat, nstripes);
+                     parallel_for_(Range(0, nstripes), mminvoker, nstripes);
++                    const int64 col2im_start = getTickCount();
+ 
+                     std::vector<int> kernel_shape_int(kernel_size.begin(), kernel_size.end());
+                     std::vector<int> pads_int(pads_begin.begin(), pads_begin.end());
+@@ -971,6 +973,10 @@
+                     Col2ImInvoker::run(colMat.ptr<float>(), outGroupCn, outSpatialShape,
+                                        kernel_shape_int, pads_int, strides_int, dilations_int, inpSpatialShape,
+                                        dstMat.ptr<float>(), curBiasMat.ptr<float>(), is1x1flag);
++                    const int64 col2im_end = getTickCount();
++                    fprintf(stderr, "DECONV_PHASE {\"gemm_ms\":%.9g,\"col2im_ms\":%.9g}\n",
++                            (col2im_start - gemm_start) * 1000.0 / getTickFrequency(),
++                            (col2im_end - col2im_start) * 1000.0 / getTickFrequency());
+                 }
+             }
+             if (kind == _InputArray::STD_VECTOR_UMAT) {

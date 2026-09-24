@@ -31,6 +31,11 @@ def run(case, threads, iterations, variant, cases="bench_cases.txt", wide=False,
         if process.returncode:
             raise RuntimeError(f"{variant}/{case}/{threads}: {process.stdout}\n{process.stderr}")
         rows = [json.loads(line) for line in process.stdout.splitlines() if line.startswith("{")]
+        phases = [json.loads(line[len("DECONV_PHASE "):])
+                  for line in process.stderr.splitlines() if line.startswith("DECONV_PHASE ")]
+        if phases:
+            assert len(rows) == 1
+            rows[0]["phase_samples"] = phases
         data = output.read_bytes()
         for row in rows:
             row.update(variant=variant, wide=wide)
@@ -43,6 +48,7 @@ def main():
     parser.add_argument("--pairs", type=int, default=5)
     parser.add_argument("--iterations", type=int, default=15)
     parser.add_argument("--cases", default="pointwise_tiny,pointwise,ocr128,ocr368,overlap,dilated,three_d,tiny")
+    parser.add_argument("--case-file", default="bench_cases.txt")
     parser.add_argument("--threads", default="1,4")
     parser.add_argument("--net", action="store_true")
     parser.add_argument("--output")
@@ -70,7 +76,8 @@ def main():
                 for repeat in range(args.pairs):
                     pair, data = {}, {}
                     for variant in (("before", "after") if repeat % 2 == 0 else ("after", "before")):
-                        values, result = run(case, threads, args.iterations, variant, net=args.net)
+                        values, result = run(case, threads, args.iterations, variant,
+                                             cases=args.case_file, net=args.net)
                         assert len(values) == 1
                         pair[variant] = values[0]
                         data[variant] = result

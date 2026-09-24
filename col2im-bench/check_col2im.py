@@ -83,11 +83,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=ROOT)
+    parser.add_argument("--baseline-ref")
+    parser.add_argument("--wide-rows", action="store_true")
+    parser.add_argument("--candidate-source", type=Path)
     args = parser.parse_args()
     text = """// This file is part of OpenCV project.
 // It is subject to the license terms in the LICENSE file found in the top-level directory
 // of this distribution and at http://opencv.org/license.html.
 #include <opencv2/core.hpp>
+#include <opencv2/core/hal/intrin.hpp>
 #include <algorithm>
 #include <cstring>
 #include <functional>
@@ -97,14 +101,26 @@ def main():
 using cv::Range;
 using cv::getNumThreads;
 using cv::parallel_for_;
+using namespace cv;
 """
     for namespace, path in [("baseline", ROOT / "deconvolution_before.cpp"),
                             ("candidate", REPO / "modules/dnn/src/layers/deconvolution_layer.cpp")]:
-        code = path.read_text()
+        if namespace == "baseline" and args.baseline_ref:
+            code = subprocess.check_output(
+                ["git", "-C", str(REPO), "show",
+                 args.baseline_ref + ":modules/dnn/src/layers/deconvolution_layer.cpp"], text=True)
+        elif namespace == "candidate" and args.candidate_source:
+            code = args.candidate_source.read_text()
+        else:
+            code = path.read_text()
         start = code.index("    class Col2ImInvoker")
         end = code.index("\n#ifdef HAVE_OPENCL", start)
         text += "namespace " + namespace + " {\n" + code[start:end] + "\n}\n"
-    text += DRIVER
+    driver = DRIVER
+    if args.wide_rows:
+        driver = driver.replace("input[d] = 2 + random() % 3;",
+            "input[d] = (d == dims - 1 && !pointwise && test % 4 == 0 ? 9 : 2) + random() % 3;")
+    text += driver
     args.output_dir.mkdir(parents=True, exist_ok=True)
     source = args.output_dir / "col2im_check.cpp"
     source.write_text(text)

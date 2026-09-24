@@ -1,0 +1,54 @@
+{
+  "scope": "GEMM includes its dispatch. Col2Im includes tap table setup and bias. Warmup calls are excluded. These are diagnostic timings. Use bench_simd.json for full layer times.",
+  "summary": [
+    {
+      "case": "ocr128",
+      "threads": 1,
+      "before_gemm_ms": 0.342422,
+      "before_col2im_ms": 5.655069,
+      "after_gemm_ms": 0.292042,
+      "after_col2im_ms": 0.650916
+    },
+    {
+      "case": "overlap",
+      "threads": 1,
+      "before_gemm_ms": 0.161089,
+      "before_col2im_ms": 0.837282,
+      "after_gemm_ms": 0.160583,
+      "after_col2im_ms": 0.173837
+    },
+    {
+      "case": "three_d",
+      "threads": 1,
+      "before_gemm_ms": 0.25402,
+      "before_col2im_ms": 1.181412,
+      "after_gemm_ms": 0.252711,
+      "after_col2im_ms": 0.444732
+    },
+    {
+      "case": "ocr128",
+      "threads": 4,
+      "before_gemm_ms": 0.134413,
+      "before_col2im_ms": 1.568129,
+      "after_gemm_ms": 0.079706,
+      "after_col2im_ms": 0.173522
+    },
+    {
+      "case": "overlap",
+      "threads": 4,
+      "before_gemm_ms": 0.05039,
+      "before_col2im_ms": 0.22517,
+      "after_gemm_ms": 0.048474,
+      "after_col2im_ms": 0.048562
+    },
+    {
+      "case": "three_d",
+      "threads": 4,
+      "before_gemm_ms": 0.075548,
+      "before_col2im_ms": 0.354317,
+      "after_gemm_ms": 0.076592,
+      "after_col2im_ms": 0.187919
+    }
+  ],
+  "source_note": "These phase measurements use the SIMD prototype before the small-input setup guard. The source patch adds timers and writes to stderr. Use bench_final.json and bench_base_final.json for final whole-layer times."
+}

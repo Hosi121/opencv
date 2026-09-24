@@ -1,0 +1,53 @@
+{
+  "baseline": "ae8e518fdf49c9a8931cc2300707b2976d1cde09",
+  "row_commit": "7a21734a43725506611a632665fb859b0a3a9730",
+  "libraries": {
+    "baseline": "992f92231c1ee1ff941847b05cee3d145f01e0d71758d60952bca715ddb483e9",
+    "row": "01fc61e457d79f6c97b13d6f377daf871d79b8e08b164087d0be39db5e433115",
+    "final": "9482ae29f23b7b0317eba4ac469cc45166bf3bfa02eb1cd198ce6a1dbb92ae22",
+    "base": "fa81aa40b026a27267ed35dc630365fee402c1938665c41716a316620e263be4"
+  },
+  "prototype_before_setup_guard": {
+    "source_sha256": "1bbfb223f7995e0c354874f4eba96ec84c271f5af808a5c87595fe3fa6084fe7",
+    "library_sha256": "3a811785cbc6b04ee9abf5018ea22c99181329d2817621d398fb68b20eb793b7"
+  },
+  "base": "8d126c4a672936fde5a21d9133c352b18d4299a5",
+  "commit": "623c587ad91f3290e36a2c4f70163c9e30c687c2",
+  "source_sha256": "4648366d28cf9a4c0a6a970412339989fc537c8581d676ad5e81d8f3133ed429",
+  "cpu": "Intel Core Ultra 7 255H",
+  "platform": "Ubuntu 24.04, WSL2, x86_64",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "build": "Release, SSE3 baseline, AVX2 dispatch, pthreads, no IPP, no OpenCL, no external BLAS",
+  "permanent_accuracy_cases": 10,
+  "existing_accuracy_cases": 48,
+  "threads": [
+    1,
+    4
+  ],
+  "library_source_note": "The library was built before the commit. Its source content is the same as this commit.",
+  "final_results": [
+    "bench_final.json",
+    "bench_base_final.json",
+    "bench_net_final.json",
+    "bench_simd_vs_row.json",
+    "bench_edges_final.json",
+    "bench_tiny_final.json",
+    "bench_tiny_control.json",
+    "verify_final.json",
+    "sanitizer_final.json",
+    "sanitizer_scalar.json",
+    "tests_final_threads1.log",
+    "tests_final_threads4.log",
+    "perf_final.log"
+  ],
+  "prototype_results": [
+    "bench_simd.json",
+    "bench_edges.json",
+    "profile.json",
+    "profile_summary.json",
+    "sanitizer_simd.json",
+    "sanitizer_special_bias.json",
+    "sanitizer_special_bias_o3.json",
+    "sanitizer_emulated_simd.json"
+  ]
+}
