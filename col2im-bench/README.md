@@ -1,7 +1,8 @@
 # CPU Deconvolution measurements
 
 The base is OpenCV `5.x` at `8d126c4a672936fde5a21d9133c352b18d4299a5`.
-The current patch is `623c587ad91f3290e36a2c4f70163c9e30c687c2`.
+The current patch is `27dadfe394f64fe4bfa7b64137d2e85e235b9f4f`.
+The previous PR patch is `623c587ad91f3290e36a2c4f70163c9e30c687c2`.
 The patch changes the legacy CPU `Deconvolution` layer. The new ONNX
 `ConvTranspose2` layer has a separate implementation. These are layer results,
 not complete-model results. ARM hardware was not tested.
@@ -9,7 +10,8 @@ not complete-model results. ARM hardware was not tested.
 The code builds valid tap tables for each axis and shares them across channels
 and workers. It decodes the outer coordinates once per output row. For horizontal
 stride 1 or 2, it uses 128-bit SIMD where four inputs are consecutive and the tap
-set stays the same. Other positions use the scalar loop. Each output keeps the
+set stays the same. The last change keeps the tap lists fixed across a whole
+input run. It adds no buffer. Other positions use the scalar loop. Each output keeps the
 original sum order. The pointwise path adds bias one channel segment at a time.
 GEMM and output ownership do not change.
 
@@ -22,17 +24,17 @@ not a process memory measurement.
 
 ## Results and limits
 
-One-thread layer results against upstream:
+Current patch: one-thread layer results against upstream, from
+`run_reuse_20260925/bench_base.json`:
 
 | Input, channels in/out | Kernel, stride | Base | PR | Speedup |
 | --- | --- | ---: | ---: | ---: |
-| 128×128, 16/16 | 1×1, 1 | 2.882 ms | 0.095 ms | 30.4× |
-| 128×128, 16/16 | 2×2, 2 | 72.744 ms | 0.932 ms | 78.1× |
-| 368×368, 16/16 | 2×2, 2 | 616.456 ms | 7.997 ms | 77.1× |
-| 64×64, 16/16 | 3×3, 1, pad 1 | 11.121 ms | 0.349 ms | 31.8× |
-| 16×16×16, 8/8 | 3×3×3, 1 | 22.282 ms | 0.766 ms | 29.1× |
+| 128×128, 16/16 | 1×1, 1 | 2.972 ms | 0.095 ms | 31.4× |
+| 128×128, 16/16 | 2×2, 2 | 75.136 ms | 0.879 ms | 85.5× |
+| 64×64, 16/16 | 3×3, 1, pad 1 | 10.534 ms | 0.329 ms | 32.1× |
+| 16×16×16, 8/8 | 3×3×3, 1 | 22.359 ms | 0.666 ms | 33.6× |
 
-All current results are in `row_simd_20260925/`:
+Results for the previous patch (`623c587`) are in `row_simd_20260925/`:
 
 | File | Comparison |
 | --- | --- |
@@ -73,6 +75,21 @@ in `bench_edges_final.json`. The other edge cases still have small timing change
 version before this guard. The source patch is `repro/profile.patch`. Timer output
 is inside the forward call; do not use those total times as layer benchmarks.
 The old `review_20260924/` and root result files describe earlier versions.
+
+Results for the latest change are in `run_reuse_20260925/`. Its
+`bench_confirm.json` compares the previous patch with the current commit. It uses
+seven pairs and 101 calls per process. One-thread layer time is 0.957 to 0.864 ms
+for the 128-square 2x2 case, and 7.768 to 7.133 ms for the 368-square case.
+Four-thread times vary. The dilation case changes sign between repeats, and the
+same-binary control varies by about 30 percent in each direction. Do not use its
+large four-thread gains as a performance claim. Small shapes also have small
+negative differences. See `bench_small_repeat.json`, `bench_control.json`, and
+`bench_edges.json`.
+
+The current commit passes all 58 accuracy tests at one and four threads, the six
+performance tests, and 768 output comparisons with upstream. The test count did
+not change. The existing overlap case now uses a wider row after its shape change
+to cover more than one SIMD block.
 
 ## Repeat the measurements
 
@@ -136,7 +153,7 @@ thread counts: 768 comparisons and 5,417,400 output values.
 For the extracted helper check against the previous PR version, run:
 
 ```bash
-python3 -B check_col2im.py --baseline-ref ae8e518f --wide-rows --output-dir helper-check
+python3 -B check_col2im.py --baseline-ref 623c587 --wide-rows --output-dir helper-check
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./helper-check/col2im_check
 ```
 
@@ -144,9 +161,12 @@ This check extracts both `Col2ImInvoker` implementations. It uses ASan and UBSan
 for the extracted code and links the normal OpenCV core library. It is not a
 sanitizer build of the full library. The 192 cases cover 1D, 2D, and 3D, special
 float values, and output guard values. They also check that the column input
-does not change. The final native and forced scalar checks are in
-`sanitizer_final.json` and `sanitizer_scalar.json`. Their source files are in
-`repro/final/`. The scalar source sets `CV_SIMD128` to zero. The earlier checks
+does not change. The current results at O1 and O3 are in
+`run_reuse_20260925/sanitizer.json` and `sanitizer_o3.json`. The O3 check uses the
+same source and compiler flags as the script, with `-O3` in place of `-O1`.
+The previous patch also has native and forced scalar checks in
+`row_simd_20260925/sanitizer_final.json` and `sanitizer_scalar.json`. Their source files are in
+`row_simd_20260925/repro/final/`. The scalar source sets `CV_SIMD128` to zero. The earlier checks
 also tested special bias values and the C++ vector implementation.
 `CV_FORCE_SIMD128_CPP` does not disable the SIMD branch.
 
@@ -154,4 +174,3 @@ Nontrivial 1D full-layer cases failed on the base during test development.
 The failure is in the existing 1D shape and workspace handling. This patch does
 not change that code. Full-layer accuracy and performance claims are limited
 to 2D and 3D. The extracted helper check also covers 1D.
-

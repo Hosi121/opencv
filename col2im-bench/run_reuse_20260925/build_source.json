@@ -1,0 +1,45 @@
+{
+  "base": "8d126c4a672936fde5a21d9133c352b18d4299a5",
+  "cpu": "Intel Core Ultra 7 255H",
+  "platform": "Ubuntu 24.04, WSL2, x86_64",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "build": "Release, SSE3 baseline, AVX2 dispatch, pthreads, no IPP, no OpenCL, no external BLAS",
+  "permanent_accuracy_cases": 10,
+  "existing_accuracy_cases": 48,
+  "threads": [
+    1,
+    4
+  ],
+  "baseline": "623c587ad91f3290e36a2c4f70163c9e30c687c2",
+  "commit": "27dadfe394f64fe4bfa7b64137d2e85e235b9f4f",
+  "source_sha256": "714dec208441021ae6459b25a7d2eccb327478cf716d9141cbf536f782f44d17",
+  "libraries": {
+    "base": "fa81aa40b026a27267ed35dc630365fee402c1938665c41716a316620e263be4",
+    "baseline": "9482ae29f23b7b0317eba4ac469cc45166bf3bfa02eb1cd198ce6a1dbb92ae22",
+    "candidate": "c37543e446fdd85f8392901bb6e01e13b9f52a5b1c59a5e7bbe5e27e9cf73c80"
+  },
+  "library_source_note": "The library was built before the commit. Its source content is the same as this commit.",
+  "results": [
+    "bench_base.json",
+    "bench_run.json",
+    "bench_confirm.json",
+    "bench_small_repeat.json",
+    "bench_control.json",
+    "bench_edges.json",
+    "verify_base.json",
+    "sanitizer.json",
+    "sanitizer_o3.json",
+    "tests_threads1.log",
+    "tests_threads4.log",
+    "perf.log"
+  ],
+  "sanitizer_scope": "The extracted helper uses ASan and UBSan at O1 and O3. It links the normal core library.",
+  "reason": "Keep the change. It removes repeated run checks and tap-list selection. One-thread layer time falls by about 3 to 10 percent. Four-thread times vary. The change adds no buffer and keeps the sum order.",
+  "patch_lines": {
+    "source_added": 20,
+    "source_removed": 8,
+    "test_added": 4,
+    "test_removed": 1
+  },
+  "additional_buffer_bytes": 0
+}
