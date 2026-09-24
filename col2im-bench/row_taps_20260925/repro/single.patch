@@ -1,0 +1,23 @@
+diff --git a/modules/dnn/src/layers/deconvolution_layer.cpp b/modules/dnn/src/layers/deconvolution_layer.cpp
+index ff5d737..0dc91ea 100644
+--- a/modules/dnn/src/layers/deconvolution_layer.cpp
++++ b/modules/dnn/src/layers/deconvolution_layer.cpp
+@@ -673,6 +673,9 @@ public:
+ 
+ #if CV_SIMD128
+                 const v_float32x4 vbias = v_setall_f32(bias);
++                bool single_outer_tap = true;
++                for (int d = 0; d < last; d++)
++                    single_outer_tap = single_outer_tap && tap_end[d] == tap_begin[d] + 1;
+                 auto sum_four = [&](size_t x, size_t input_offset) {
+                     v_float32x4 val = v_setzero_f32();
+                     if (has_outer_taps)
+@@ -682,7 +685,7 @@ public:
+                         {
+                             for (size_t k = x_starts[x]; k < x_starts[x + 1]; k++)
+                                 val = v_add(val, v_load(data_col_ + offset + x_offsets[k] + input_offset));
+-                        } while (next_tap(offset, tap_index, tap_begin, tap_end, last - 1));
++                        } while (!single_outer_tap && next_tap(offset, tap_index, tap_begin, tap_end, last - 1));
+                     }
+                     return v_add(val, vbias);
+                 };

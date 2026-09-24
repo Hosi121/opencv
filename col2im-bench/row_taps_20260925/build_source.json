@@ -1,0 +1,85 @@
+{
+  "base": "8d126c4a672936fde5a21d9133c352b18d4299a5",
+  "cpu": "Intel Core Ultra 7 255H",
+  "platform": "Ubuntu 24.04, WSL2, x86_64",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "build": "Release, SSE3 baseline, AVX2 dispatch, pthreads, no IPP, no OpenCL, no external BLAS",
+  "permanent_accuracy_cases": 10,
+  "existing_accuracy_cases": 48,
+  "threads": [
+    1,
+    4
+  ],
+  "baseline": "27dadfe394f64fe4bfa7b64137d2e85e235b9f4f",
+  "commit": "032ebeefe7996accff6e6c14d5a2ea17d0a9d7ff",
+  "source_sha256": "330f4fd1af719af3c067750927d707b54e45e6fcc4894fd8450f09fcb88d7fff",
+  "libraries": {
+    "baseline": "c37543e446fdd85f8392901bb6e01e13b9f52a5b1c59a5e7bbe5e27e9cf73c80",
+    "final": "6ca63572aeb0ca5bbea929ccf2aee7df29a6550504703e6dad4db7fcd6cc269d",
+    "base": "fa81aa40b026a27267ed35dc630365fee402c1938665c41716a316620e263be4"
+  },
+  "library_source_note": "The library was built before the commit. Its source content is the same as this commit.",
+  "mechanism": "Find the last outer axis with more than one valid tap while the row coordinates are decoded. The SIMD sum skips the trailing axes with one tap.",
+  "correctness": "A trailing axis with one tap restores the same index and offset on each carry. It does not add another input value. Skipping these axes keeps the order of all input additions. Empty rows still skip the sum.",
+  "additional_buffer_bytes": 0,
+  "line_delta": {
+    "added": 9,
+    "removed": 1
+  },
+  "permanent_tests": "The existing non-overlap case covers the single-tap path. The overlap cases cover both one and multiple outer taps. No new cases are planned.",
+  "target_result": {
+    "case": "ocr128",
+    "threads": 1,
+    "base_ms": 79.916821,
+    "final_ms": 0.644084,
+    "ratio_of_medians": 124.0782584259196,
+    "minimum_paired_speedup": 114.75589694365587,
+    "maximum_paired_speedup": 128.36013962277855,
+    "all_seven_pairs_above_100": true
+  },
+  "prototype": {
+    "base": "8d126c4a672936fde5a21d9133c352b18d4299a5",
+    "baseline": "27dadfe394f64fe4bfa7b64137d2e85e235b9f4f",
+    "candidate": "single_outer_tap",
+    "source_sha256": "ed89d470084881005590ff4004ebafaeb0868a46b4764f240fa9e6e3269fe789",
+    "hypothesis": "Skip the outer index reset if all outer axes have one valid tap. The row test replaces an index reset for each SIMD block.",
+    "correctness": "For one valid tap, next_tap returns false and restores the same index and offset. The loop body does not change these outer indices. Skipping this call keeps the sum order. Empty rows still skip the sum. Rows with more than one outer tap use the previous loop.",
+    "additional_buffer_bytes": 0,
+    "scope": "The existing SIMD path in Col2Im. GEMM, thread ownership, and scalar paths do not change.",
+    "target_speedup": 100,
+    "target_case": "ocr128, one thread, whole layer against the fixed upstream base",
+    "line_delta": {
+      "added": 4,
+      "removed": 1
+    },
+    "permanent_tests": "The existing non-overlap case covers the single-tap path. The overlap cases cover both one and multiple outer taps. No new cases are planned."
+  },
+  "results": [
+    "bench_merged.json",
+    "bench_base_final.json",
+    "bench_merged_repeat.json",
+    "bench_quiet_repeat.json",
+    "bench_control.json",
+    "verify_final.json",
+    "sanitizer_final.json",
+    "sanitizer_o3.json",
+    "tests_threads1.log",
+    "tests_threads4.log",
+    "perf_final.log"
+  ],
+  "prototype_results": {
+    "single_outer_tap": [
+      "bench_single.json",
+      "bench_final.json",
+      "bench_base.json",
+      "bench_repeat.json",
+      "sanitizer_single.json"
+    ],
+    "separate_axis_scan": [
+      "bench_axes.json",
+      "sanitizer_axes.json"
+    ]
+  },
+  "limits": "The representative 2D case exceeds 100x. The long 3D repeat is slower, including about 1.6 percent with one thread and a median paired slowdown of about 11 percent with four threads. Four-thread samples and same-binary controls vary. This is not a no-regression result.",
+  "publication_status": "Commit 032ebee is pushed to the branch for PR #30001. The PR reports results against the fixed upstream base. Intermediate comparisons are kept in the raw results."
+}

@@ -10,6 +10,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parent
 BUILD = Path(os.environ.get("OPENCV_BUILD_DIR", ROOT.parent.parent.parent / ".tools/opencv-col2im-build"))
 BEFORE = Path(os.environ.get("OPENCV_BEFORE_DIR", ROOT / "baseline"))
+PROBE = Path(os.environ.get("OPENCV_PROBE", ROOT / "probe"))
 
 
 def run(case, threads, iterations, variant, cases="bench_cases.txt", wide=False, net=False):
@@ -25,7 +26,7 @@ def run(case, threads, iterations, variant, cases="bench_cases.txt", wide=False,
     with tempfile.TemporaryDirectory(prefix="opencv-deconv-") as temp:
         output = Path(temp) / "output.bin"
         process = subprocess.run([
-            "taskset", "-c", "0" if threads == 1 else "0-3", str(ROOT / "probe"),
+            "taskset", "-c", "0" if threads == 1 else "0-3", str(PROBE),
             str(ROOT / cases), case, str(threads), str(iterations), str(output)
         ], env=env, text=True, capture_output=True)
         if process.returncode:

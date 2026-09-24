@@ -1,8 +1,8 @@
 # CPU Deconvolution measurements
 
 The base is OpenCV `5.x` at `8d126c4a672936fde5a21d9133c352b18d4299a5`.
-The current patch is `27dadfe394f64fe4bfa7b64137d2e85e235b9f4f`.
-The previous PR patch is `623c587ad91f3290e36a2c4f70163c9e30c687c2`.
+The current patch is `032ebeefe7996accff6e6c14d5a2ea17d0a9d7ff`.
+The previous PR patch is `27dadfe394f64fe4bfa7b64137d2e85e235b9f4f`.
 The patch changes the legacy CPU `Deconvolution` layer. The new ONNX
 `ConvTranspose2` layer has a separate implementation. These are layer results,
 not complete-model results. ARM hardware was not tested.
@@ -10,8 +10,9 @@ not complete-model results. ARM hardware was not tested.
 The code builds valid tap tables for each axis and shares them across channels
 and workers. It decodes the outer coordinates once per output row. For horizontal
 stride 1 or 2, it uses 128-bit SIMD where four inputs are consecutive and the tap
-set stays the same. The last change keeps the tap lists fixed across a whole
-input run. It adds no buffer. Other positions use the scalar loop. Each output keeps the
+set stays the same. The tap lists stay fixed across a whole input run. The SIMD
+loop skips index resets for trailing outer axes with only one valid tap.
+The last change adds no buffer. Other positions use the scalar loop. Each output keeps the
 original sum order. The pointwise path adds bias one channel segment at a time.
 GEMM and output ownership do not change.
 
@@ -25,16 +26,27 @@ not a process memory measurement.
 ## Results and limits
 
 Current patch: one-thread layer results against upstream, from
-`run_reuse_20260925/bench_base.json`:
+`row_taps_20260925/bench_base_final.json`:
 
 | Input, channels in/out | Kernel, stride | Base | PR | Speedup |
 | --- | --- | ---: | ---: | ---: |
-| 128×128, 16/16 | 1×1, 1 | 2.972 ms | 0.095 ms | 31.4× |
-| 128×128, 16/16 | 2×2, 2 | 75.136 ms | 0.879 ms | 85.5× |
-| 64×64, 16/16 | 3×3, 1, pad 1 | 10.534 ms | 0.329 ms | 32.1× |
-| 16×16×16, 8/8 | 3×3×3, 1 | 22.359 ms | 0.666 ms | 33.6× |
+| 128×128, 16/16 | 1×1, 1 | 2.994 ms | 0.088 ms | 34.2× |
+| 128×128, 16/16 | 2×2, 2 | 79.917 ms | 0.644 ms | 124.1× |
+| 64×64, 16/16 | 3×3, 1, pad 1 | 10.259 ms | 0.323 ms | 31.8× |
+| 16×16×16, 8/8 | 3×3×3, 1 | 21.922 ms | 0.680 ms | 32.3× |
 
-Results for the previous patch (`623c587`) are in `row_simd_20260925/`:
+This comparison uses seven pairs of separate processes, with two warmup calls
+and 31 measured calls per process. Version order alternates. Times are medians
+of process medians. Speedup uses the unrounded times. All seven pairs for the
+128-square 2x2 case exceed 100x. CPU affinity is 0. These are measured results
+on a shared WSL2 host, not estimates or results for all shapes.
+
+The current results are in `row_taps_20260925/`. `build_source.json` identifies
+the final source and the earlier trials. `bench_merged.json` compares the previous
+PR commit with the current code. The repeat and control files retain all samples.
+The source patches and extracted checks are in its `repro/` directory.
+
+Results for the earlier SIMD patch (`623c587`) are in `row_simd_20260925/`:
 
 | File | Comparison |
 | --- | --- |
@@ -48,7 +60,7 @@ Results for the previous patch (`623c587`) are in `row_simd_20260925/`:
 | `verify_final.json` | 768 output comparisons with upstream |
 | `table_storage.json` | Table sizes for the measured shapes |
 
-The two main comparisons use five pairs of separate processes per case, with
+Those two main comparisons use five pairs of separate processes per case, with
 two warmup calls and 15 measured calls per process. Version order alternates.
 Reported times are medians of process medians. Reductions are medians of paired
 reductions. The files also contain each sample and the minimum and maximum
@@ -76,8 +88,8 @@ version before this guard. The source patch is `repro/profile.patch`. Timer outp
 is inside the forward call; do not use those total times as layer benchmarks.
 The old `review_20260924/` and root result files describe earlier versions.
 
-Results for the latest change are in `run_reuse_20260925/`. Its
-`bench_confirm.json` compares the previous patch with the current commit. It uses
+Results for the previous commit (`27dadfe`) are in `run_reuse_20260925/`. Its
+`bench_confirm.json` compares `623c587` with `27dadfe`. It uses
 seven pairs and 101 calls per process. One-thread layer time is 0.957 to 0.864 ms
 for the 128-square 2x2 case, and 7.768 to 7.133 ms for the 368-square case.
 Four-thread times vary. The dilation case changes sign between repeats, and the
@@ -87,9 +99,9 @@ negative differences. See `bench_small_repeat.json`, `bench_control.json`, and
 `bench_edges.json`.
 
 The current commit passes all 58 accuracy tests at one and four threads, the six
-performance tests, and 768 output comparisons with upstream. The test count did
-not change. The existing overlap case now uses a wider row after its shape change
-to cover more than one SIMD block.
+performance tests, and 768 output comparisons with upstream. These results are
+in `row_taps_20260925/`. The test count did not change. The existing overlap case
+uses a wider row after its shape change to cover more than one SIMD block.
 
 ## Repeat the measurements
 
@@ -125,7 +137,8 @@ g++ -O2 -std=c++17 probe.cpp \
   -L"$OPENCV_BUILD_DIR/lib" -lopencv_dnn -lopencv_core -pthread -o probe
 python3 -B cases.py
 python3 -B measure.py verify --output verify_repeat.json
-python3 -B measure.py bench --output bench_repeat.json
+python3 -B measure.py bench --pairs 7 --iterations 31 --threads 1 \
+  --cases pointwise,ocr128,overlap,three_d --output bench_repeat.json
 python3 -B measure.py bench --net --pairs 3 --cases ocr128,overlap --output net_repeat.json
 ```
 
@@ -153,7 +166,7 @@ thread counts: 768 comparisons and 5,417,400 output values.
 For the extracted helper check against the previous PR version, run:
 
 ```bash
-python3 -B check_col2im.py --baseline-ref 623c587 --wide-rows --output-dir helper-check
+python3 -B check_col2im.py --baseline-ref 27dadfe --wide-rows --output-dir helper-check
 ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./helper-check/col2im_check
 ```
 
@@ -162,7 +175,7 @@ for the extracted code and links the normal OpenCV core library. It is not a
 sanitizer build of the full library. The 192 cases cover 1D, 2D, and 3D, special
 float values, and output guard values. They also check that the column input
 does not change. The current results at O1 and O3 are in
-`run_reuse_20260925/sanitizer.json` and `sanitizer_o3.json`. The O3 check uses the
+`row_taps_20260925/sanitizer_final.json` and `sanitizer_o3.json`. The O3 check uses the
 same source and compiler flags as the script, with `-O3` in place of `-O1`.
 The previous patch also has native and forced scalar checks in
 `row_simd_20260925/sanitizer_final.json` and `sanitizer_scalar.json`. Their source files are in
@@ -174,3 +187,31 @@ Nontrivial 1D full-layer cases failed on the base during test development.
 The failure is in the existing 1D shape and workspace handling. This patch does
 not change that code. Full-layer accuracy and performance claims are limited
 to 2D and 3D. The extracted helper check also covers 1D.
+
+## Restore the local files
+
+From `/home/hosi/churin`, restore these archives in order:
+
+```bash
+tar -xJf archive/opencv_deconv_20260920/artifacts.tar.xz -C /home/hosi/churin
+tar -xJf archive/opencv_deconv_20260920/test_cleanup_20260924.tar.xz -C /home/hosi/churin
+tar -xJf archive/opencv_deconv_20260920/review_20260924.tar.xz -C /home/hosi/churin
+tar -xJf archive/opencv_deconv_20260920/row_simd_20260925.tar.xz -C /home/hosi/churin
+tar -xJf archive/opencv_deconv_20260920/run_reuse_20260925.tar.xz -C /home/hosi/churin
+tar -xJf archive/opencv_deconv_20260920/row_taps_20260925.tar.xz -C /home/hosi/churin
+```
+
+To restore `27dadfe` for the comparison with the previous patch, extract only
+`.tools/opencv-col2im-build/lib/libopencv_dnn.so.5.1.0` from the run reuse archive
+into the directory set by `OPENCV_BEFORE_DIR`. Keep the library name and add
+`libopencv_dnn.so.501` as a symlink to it. This avoids a second archived copy.
+
+For a new build, restore the source files that the sparse checkout excludes:
+
+```bash
+git -C .tools/opencv-col2im sparse-checkout set --no-cone --stdin \
+  < results/oss/opencv_deconv_20260920/source_sparse_for_build.txt
+git -C .tools/opencv-col2im restore --ignore-skip-worktree-bits --source=HEAD -- \
+  doc/CMakeLists.txt docs_sphinx/CMakeLists.txt
+cmake -S .tools/opencv-col2im -B .tools/opencv-col2im-build
+```
