@@ -1,0 +1,53 @@
+[
+  {
+    "case": "overlap",
+    "samples": 1505,
+    "median_ms": {
+      "gemm_ms": 0.160963,
+      "tap_setup_ms": 0.001346,
+      "run_setup_ms": 0.000134,
+      "output_ms": 0.16737,
+      "total_ms": 0.33291
+    },
+    "percent_total": {
+      "gemm_ms": 49.0493321909973,
+      "tap_setup_ms": 0.43309039695399265,
+      "run_setup_ms": 0.04980521884925317,
+      "output_ms": 49.805455938664636
+    }
+  },
+  {
+    "case": "three_d",
+    "samples": 1505,
+    "median_ms": {
+      "gemm_ms": 0.23041,
+      "tap_setup_ms": 0.000961,
+      "run_setup_ms": 8.1e-05,
+      "output_ms": 0.427543,
+      "total_ms": 0.661336
+    },
+    "percent_total": {
+      "gemm_ms": 35.53600773148588,
+      "tap_setup_ms": 0.16173212525167777,
+      "run_setup_ms": 0.014045986137272535,
+      "output_ms": 63.847202830507655
+    }
+  },
+  {
+    "case": "ocr128",
+    "samples": 1505,
+    "median_ms": {
+      "gemm_ms": 0.299256,
+      "tap_setup_ms": 0.002795,
+      "run_setup_ms": 0.000308,
+      "output_ms": 0.33136,
+      "total_ms": 0.641008
+    },
+    "percent_total": {
+      "gemm_ms": 46.95617468800556,
+      "tap_setup_ms": 0.4934819081992295,
+      "run_setup_ms": 0.07115203031705682,
+      "output_ms": 51.85882604176027
+    }
+  }
+]

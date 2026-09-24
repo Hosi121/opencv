@@ -85,6 +85,7 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=ROOT)
     parser.add_argument("--baseline-ref")
     parser.add_argument("--wide-rows", action="store_true")
+    parser.add_argument("--max-dims", type=int, choices=range(1, 5), default=3)
     parser.add_argument("--candidate-source", type=Path)
     args = parser.parse_args()
     text = """// This file is part of OpenCV project.
@@ -116,7 +117,7 @@ using namespace cv;
         start = code.index("    class Col2ImInvoker")
         end = code.index("\n#ifdef HAVE_OPENCL", start)
         text += "namespace " + namespace + " {\n" + code[start:end] + "\n}\n"
-    driver = DRIVER
+    driver = DRIVER.replace("dims <= 3", "dims <= " + str(args.max_dims))
     if args.wide_rows:
         driver = driver.replace("input[d] = 2 + random() % 3;",
             "input[d] = (d == dims - 1 && !pointwise && test % 4 == 0 ? 9 : 2) + random() % 3;")

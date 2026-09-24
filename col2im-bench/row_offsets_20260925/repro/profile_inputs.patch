@@ -1,0 +1,66 @@
+--- a/modules/dnn/src/layers/deconvolution_layer.cpp
++++ b/modules/dnn/src/layers/deconvolution_layer.cpp
+@@ -74,6 +74,12 @@
+ namespace dnn
+ {
+ 
++static thread_local int64 deconv_profile_ticks[4];
++extern "C" CV_EXPORTS const int64* opencv_deconv_profile()
++{
++    return deconv_profile_ticks;
++}
++
+ class BaseConvolutionLayerImpl : public ConvolutionLayer
+ {
+ public:
+@@ -508,6 +514,7 @@
+                         const float* biasvec,
+                         bool is1x1)
+         {
++            const int64 table_start = getTickCount();
+             const int nstripes = getNumThreads();
+ 
+             Col2ImInvoker t;
+@@ -556,6 +563,8 @@
+                     input_step *= input_shape[d];
+                 }
+                 t.column_channel_stride = kernel_step;
++                const int64 run_table_start = getTickCount();
++                deconv_profile_ticks[1] += run_table_start - table_start;
+ #if CV_SIMD128
+                 const int last = ndims - 1;
+                 const size_t width = output_shape[last];
+@@ -589,9 +598,12 @@
+                     }
+                 }
+ #endif
+-            }
+-
++                deconv_profile_ticks[2] += getTickCount() - run_table_start;
++            }
++
++            const int64 output_start = getTickCount();
+             parallel_for_(Range(0, nstripes), t, nstripes);
++            deconv_profile_ticks[3] += getTickCount() - output_start;
+         }
+ 
+         virtual void operator ()(const Range &r) const CV_OVERRIDE
+@@ -838,6 +850,7 @@
+         CV_TRACE_FUNCTION();
+         CV_TRACE_ARG_VALUE(name, "name", name.c_str());
+ 
++        std::fill_n(deconv_profile_ticks, 4, int64(0));
+         // For some reason, tests for deconvolution fail;
+         // Also, the current implementation is super-inefficient,
+         // Just disabled it. Need to rewrite it and then uncomment back these lines
+@@ -959,8 +972,10 @@
+                     Mat curBiasMat = biasesMat.rowRange(_Range(g * outGroupCn, outGroupCn));
+ 
+                     //gemm(wghtMat, convMat, 1, colMat, 0, colMat, 0);
++                    const int64 gemm_start = getTickCount();
+                     MatMulInvoker mminvoker(wghtMat, convMat, colMat, nstripes);
+                     parallel_for_(Range(0, nstripes), mminvoker, nstripes);
++                    deconv_profile_ticks[0] += getTickCount() - gemm_start;
+ 
+                     std::vector<int> kernel_shape_int(kernel_size.begin(), kernel_size.end());
+                     std::vector<int> pads_int(pads_begin.begin(), pads_begin.end());

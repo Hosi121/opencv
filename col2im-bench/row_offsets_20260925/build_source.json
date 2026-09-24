@@ -1,0 +1,53 @@
+{
+  "base": "8d126c4a672936fde5a21d9133c352b18d4299a5",
+  "baseline": "032ebeefe7996accff6e6c14d5a2ea17d0a9d7ff",
+  "code_commit": "51f291e08780788b55e32dd56e8e9c27e0e08558",
+  "commit": "d0d1825d5a91cfffe51550196bfee7896d60c2a3",
+  "cpu": "Intel Core Ultra 7 255H",
+  "platform": "Ubuntu 24.04, WSL2, x86_64",
+  "compiler": "GCC 13.3.0",
+  "build": "Release, SSE3 baseline, AVX2 dispatch, pthreads, no IPP, no OpenCL, no external BLAS",
+  "source_sha256": "493bcfffc506bd0c5b8d16f727c15ed62dd6691c0d7f3af2a118699a7a493281",
+  "library_sha256": "b82e1d219832af4e606bef1782ebb3c04ace8dae46480dd44f86e8a1a6808bf2",
+  "mechanism": "Build outer tap combinations once per row. Use the axis table directly when only one outer axis exists. Build input pointer lists once per SIMD run. Each output retains the original sum order.",
+  "memory": "The worker reuses row and pointer buffers. The final one-thread profile records their retained capacities. It excludes vector objects, allocator overhead, and shared axis and SIMD tables. The two-dimensional scalar path needs no worker buffer.",
+  "correctness": "Outer combinations are in ascending kernel order. The last axis changes first. Backward construction preserves the previous inner block when the row buffer is reused. Input addresses stay valid for the whole run. All floating-point additions keep the same order.",
+  "line_delta": {
+    "production_added": 48,
+    "production_removed": 60,
+    "test_added": 21,
+    "test_removed": 16
+  },
+  "tests": {
+    "permanent_accuracy_cases": 8,
+    "existing_accuracy_cases": 48,
+    "performance_cases": 6,
+    "threads": [
+      1,
+      4
+    ],
+    "full_layer_comparisons": 768,
+    "full_layer_values": 5417400,
+    "helper_cases_per_build": 256,
+    "helper_values_per_build": 192072,
+    "helper_builds": [
+      "O1 ASan/UBSan",
+      "O3 ASan/UBSan",
+      "O1 forced scalar ASan/UBSan"
+    ],
+    "helper_dimensions": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "full_layer_dimensions": [
+      2,
+      3
+    ]
+  },
+  "test_review": "Remove the second pointwise rank and the second dynamic-weight rank. They use the same changed path. Keep both ranks for overlap, non-overlap, and dilation. Use named modes, a 3x3 overlap kernel, and nonzero bias in the gap case. Keep the independent scatter reference. Existing backend tests can compare the CPU backend with itself.",
+  "stop_reason": "Two-output-block, four-output-block, and four-tap loop expansion do not give a useful gain across the measured shapes. The final 3x3 profile assigns about 69 percent of time to GEMM. A GEMM change is a separate mechanism from this PR.",
+  "limits": "These are layer results. No complete model or ARM measurements. Some small and four-thread pairs vary or are slower. The one-thread 3x3 size, stride, and dilation comparisons improve in every measured pair. Nontrivial one-dimensional full-layer cases have an existing upstream failure.",
+  "git_stage": "Both source commits are pushed to PR #30001. The PR reports the final results against the fixed upstream base."
+}

@@ -1,0 +1,6 @@
+{
+  "source_commit": "032ebeefe7996accff6e6c14d5a2ea17d0a9d7ff",
+  "source_sha256": "e43a5d23d453a6431fc4cf0b9811725c4cf3df309a8f93747d067735afc926d1",
+  "library_sha256": "227eaf407a8e61e72e8a6258fa770e81cd19cfb529566c1919ed7f6f2564dd6c",
+  "note": "Diagnostic timers only. Compare normal builds for performance claims. The source patch and the existing profile probe reproduce the measurement."
+}

@@ -1,0 +1,5 @@
+{
+  "source_sha256": "ac739838de09825f78891f5df10dbfeceb5ff286c1525461b493415557190596",
+  "library_sha256": "a2828612f50e18a6b60495dbd1baba17170196d0330ad8e3a17f0c4013afc327",
+  "note": "Diagnostic timers and final worker buffer capacities. One thread. Buffer capacity excludes vector objects, shared tables, and allocator overhead. The probe reads counters after the outer timer and writes logs after all iterations."
+}

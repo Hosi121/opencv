@@ -1,0 +1,74 @@
+[
+  {
+    "case": "overlap",
+    "samples": 1505,
+    "median_ms": {
+      "gemm_ms": 0.149566,
+      "tap_setup_ms": 0.001103,
+      "run_setup_ms": 0.000124,
+      "output_ms": 0.065106,
+      "total_ms": 0.218071
+    },
+    "percent_total": {
+      "gemm_ms": 68.62110531516572,
+      "tap_setup_ms": 0.5947110801084657,
+      "run_setup_ms": 0.0601611989172188,
+      "output_ms": 30.106084585579218
+    },
+    "worker_buffer_capacity_bytes": 96
+  },
+  {
+    "case": "three_d",
+    "samples": 1505,
+    "median_ms": {
+      "gemm_ms": 0.247746,
+      "tap_setup_ms": 0.00073,
+      "run_setup_ms": 7.5e-05,
+      "output_ms": 0.207309,
+      "total_ms": 0.451647
+    },
+    "percent_total": {
+      "gemm_ms": 54.00199564643102,
+      "tap_setup_ms": 0.20498267664045017,
+      "run_setup_ms": 0.01876261561372026,
+      "output_ms": 45.34439604851334
+    },
+    "worker_buffer_capacity_bytes": 384
+  },
+  {
+    "case": "ocr128",
+    "samples": 1505,
+    "median_ms": {
+      "gemm_ms": 0.285293,
+      "tap_setup_ms": 0.00246,
+      "run_setup_ms": 0.00029,
+      "output_ms": 0.175247,
+      "total_ms": 0.467521
+    },
+    "percent_total": {
+      "gemm_ms": 61.359301837681635,
+      "tap_setup_ms": 0.5537826549650593,
+      "run_setup_ms": 0.07318526761836713,
+      "output_ms": 37.39019105424044
+    },
+    "worker_buffer_capacity_bytes": 16
+  },
+  {
+    "case": "tiny",
+    "samples": 1505,
+    "median_ms": {
+      "gemm_ms": 4.1e-05,
+      "tap_setup_ms": 9.6e-05,
+      "run_setup_ms": 1.8e-05,
+      "output_ms": 4.8e-05,
+      "total_ms": 0.000669
+    },
+    "percent_total": {
+      "gemm_ms": 7.538630955785361,
+      "tap_setup_ms": 14.412449058703803,
+      "run_setup_ms": 2.627476933998963,
+      "output_ms": 7.028786768744445
+    },
+    "worker_buffer_capacity_bytes": 0
+  }
+]

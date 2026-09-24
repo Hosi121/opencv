@@ -1,0 +1,59 @@
+{
+  "rows": {
+    "baseline": "032ebee",
+    "source_sha256": "394992c3f64f516d58cf963877aa5149d2abe26c6b6a08efaecee727c82182af",
+    "library_sha256": "35164e69ba39f66a67ac423960f19a9d078e8ea2d57b0d794fca87aa29afa99c",
+    "patch": "repro/row_offsets.patch",
+    "results": "bench_rows.json",
+    "correctness": "sanitizer_rows.json",
+    "decision": "Keep the row reuse mechanism. It also removes the index-update helper."
+  },
+  "runs": {
+    "baseline": "rows",
+    "source_sha256": "ae8a4834594cdfb9d7c19478d3a1071cec92ba21678af4cbd357ee550abb67a4",
+    "library_sha256": "95585ce1f913ca952b975b58995f6ebf258df00b860919bc02f1ee0c1ee014f5",
+    "patch": "repro/run_offsets.patch",
+    "results": "bench_runs_vs_rows.json",
+    "decision": "Keep the input-address list for each run. It improves 3x3 and 2x2 time."
+  },
+  "inputs": {
+    "baseline": "runs",
+    "source_sha256": "499a7da7b1990ab7ecb5ecc7edbeeab4ae1543611f4a656b1e04693f104bdaa0",
+    "library_sha256": "23dcb010b855e6e522b136128ca36fc4731e503bfb099a57c551ea2c3c30387a",
+    "patch": "repro/run_inputs.patch",
+    "results": "bench_inputs_vs_runs.json",
+    "decision": "Use pointers to make the source addresses explicit. The small time difference is not a separate speed claim."
+  },
+  "paired": {
+    "baseline": "inputs",
+    "source_sha256": "fc15a32e2ab0cd55dc3ff2bf2e2d0dde26521e5fa64ef1a05cdebe15e7df56a2",
+    "library_sha256": "5aec58e7128260d87faab1816b54600025bb538826d84b33023974000aaef197",
+    "patch": "repro/paired.patch",
+    "results": "bench_paired_vs_inputs.json",
+    "decision": "Do not keep this change. The 3x3 result is not stable, and 2x2 is slower."
+  },
+  "four_blocks": {
+    "baseline": "inputs",
+    "source_sha256": "defea2e207119ce652d50405b65825d37690e33b94c910ceaaf4e18e8b43f04f",
+    "library_sha256": "eaea061b9513ec77aff840b0735d90586913916b5519d2083c3018d72a6c7267",
+    "patch": "repro/four_blocks.patch",
+    "results": "bench_four_blocks_vs_inputs.json",
+    "decision": "Do not keep this change. The small 3x3 gain comes with slower 2x2 and 3D cases and more code."
+  },
+  "view": {
+    "baseline": "inputs",
+    "source_sha256": "493bcfffc506bd0c5b8d16f727c15ed62dd6691c0d7f3af2a118699a7a493281",
+    "library_sha256": "b82e1d219832af4e606bef1782ebb3c04ace8dae46480dd44f86e8a1a6808bf2",
+    "patch": "repro/row_view.patch",
+    "results": "bench_view_vs_inputs.json",
+    "decision": "Keep this change. It avoids the row copy and worker allocation in 2D. The 3x3, 3D, and dilation samples improve."
+  },
+  "tap_unroll": {
+    "baseline": "view",
+    "source_sha256": "6c490d3798c823a755bd6a290302e9f4600959c6c638d3a427ed91a17190392b",
+    "library_sha256": "26f505c2ef86f88e74109f5d283e15b50aebc0fcdab3e6dd5c6301216aa95604",
+    "patch": "repro/tap_unroll.patch",
+    "results": "bench_tap_unroll_vs_view.json",
+    "decision": "Do not keep this change. The 3x3 gain is not stable, and 2x2 is about 5 percent slower."
+  }
+}
