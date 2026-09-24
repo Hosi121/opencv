@@ -1,0 +1,23 @@
+{
+  "base": "8d126c4a672936fde5a21d9133c352b18d4299a5",
+  "previous_pr": "eafeffd848ab6d63b4d14b9feaef4a86395fee38",
+  "source_sha256": "a241130033240a27339a3214e8ab00d349f96e0ee1c98ea4e7b49adeef12d4b2",
+  "cpu": "Intel Core Ultra 7 255H",
+  "platform": "Ubuntu 24.04, WSL2, x86_64",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "build": "Release, SSE3 baseline, AVX2 dispatch, pthreads, no IPP, no OpenCL, no external BLAS",
+  "libraries": {
+    "base": "fa81aa40b026a27267ed35dc630365fee402c1938665c41716a316620e263be4",
+    "previous_pr": "917346637bc1f97eb73d43f2fbfb395b09165fe2007cb29c3067798f1b6545ba",
+    "candidate": "992f92231c1ee1ff941847b05cee3d145f01e0d71758d60952bca715ddb483e9"
+  },
+  "pointwise_simd": "GCC emits addps in the channel segment loop. See col2im_operator.asm.",
+  "permanent_accuracy_cases": 10,
+  "existing_accuracy_cases": 48,
+  "threads": [
+    1,
+    4
+  ],
+  "commit": "ae8e518fdf49c9a8931cc2300707b2976d1cde09",
+  "library_source_note": "The library was built before the commit. Its source content is the same as this commit."
+}

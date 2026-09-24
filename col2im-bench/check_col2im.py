@@ -82,6 +82,7 @@ int main()
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare-only", action="store_true")
+    parser.add_argument("--output-dir", type=Path, default=ROOT)
     args = parser.parse_args()
     text = """// This file is part of OpenCV project.
 // It is subject to the license terms in the LICENSE file found in the top-level directory
@@ -104,7 +105,8 @@ using cv::parallel_for_;
         end = code.index("\n#ifdef HAVE_OPENCL", start)
         text += "namespace " + namespace + " {\n" + code[start:end] + "\n}\n"
     text += DRIVER
-    source = ROOT / "col2im_check.cpp"
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    source = args.output_dir / "col2im_check.cpp"
     source.write_text(text)
     if args.prepare_only:
         return
@@ -112,7 +114,7 @@ using cv::parallel_for_;
                "-fno-sanitize-recover=all", "-fno-omit-frame-pointer", "-no-pie", str(source),
                "-I" + str(REPO / "modules/core/include"), "-I" + str(BUILD),
                "-L" + str(BUILD / "lib"), "-lopencv_core", "-pthread",
-               "-o", str(ROOT / "col2im_check")]
+               "-o", str(args.output_dir / "col2im_check")]
     subprocess.run(command, check=True)
 
 

@@ -1,6 +1,7 @@
 # CPU Deconvolution measurements
 
 The base is OpenCV `5.x` at `8d126c4a672936fde5a21d9133c352b18d4299a5`.
+The current patch is `ae8e518fdf49c9a8931cc2300707b2976d1cde09`.
 The patch changes the CPU `Deconvolution` layer. The new ONNX `ConvTranspose2`
 layer uses a different implementation. These measurements do not describe that
 layer or a complete model.
@@ -9,7 +10,7 @@ The test host is an Intel Core Ultra 7 255H with Ubuntu 24.04 under WSL2.
 The compiler is GCC 13.3.0. The build uses Release mode, SSE3 with AVX2 dispatch,
 and the pthreads backend. IPP, OpenCL, and external BLAS libraries are disabled.
 
-`bench_final.json` has five pairs of separate processes per case. Each process
+`review_20260924/bench_base.json` has five pairs of separate processes per case. Each process
 has two warmup calls and 15 measured calls. The order of the two versions
 alternates between pairs. Each reported time is a median of the process medians.
 Each reduction is a median of the five paired reductions. The minimum and
@@ -17,11 +18,19 @@ maximum paired reductions are also included. CPU affinity is 0 for one thread,
 and 0 through 3 for four threads. The four-thread results have more variation.
 The host is not an isolated benchmark server. No build ran during measurement.
 
-The measured `forward()` call includes GEMM, output reconstruction, and bias.
+The measured `forward()` call includes GEMM, tap table setup, output reconstruction, and bias.
 Layer setup and memory allocation for the input, weights, and output are outside
-the timer. `bench_net_final.json` uses a single-layer `Net`. It sets the input
+the timer. `review_20260924/bench_net.json` uses a single-layer `Net`. It sets the input
 again before each measured forward call. The input setup is outside the timer.
 Both probes compare every output byte between the two versions.
+
+`review_20260924/bench_previous.json` compares the previous PR commit `eafeffd8`
+with the current patch. It uses the same cases and settings. For small inputs
+with four threads, the first base comparison has slower pairs. The repeat and
+same-binary control both have large variation. Those results are in
+`review_20260924/bench_tiny_repeat.json` and `review_20260924/bench_tiny_control.json`.
+Do not use these small cases to claim a stable speedup or no regression.
+The older `bench_final.json` describes the previous implementation.
 
 ## Repeat the measurements
 
@@ -65,14 +74,18 @@ Run the tests with the patched library:
 
 ```bash
 export LD_LIBRARY_PATH="$OPENCV_BUILD_DIR/lib"
-"$OPENCV_BUILD_DIR/bin/opencv_test_dnn" \
-  --gtest_filter='*DeconvolutionCoordinates*:*Deconvolution.Accuracy*'
+for opencv_threads in 1 4; do
+  "$OPENCV_BUILD_DIR/bin/opencv_test_dnn" \
+    --gtest_filter='*DeconvolutionCoordinates*:*Deconvolution.Accuracy*' \
+    --test_threads="$opencv_threads"
+done
 taskset -c 0 "$OPENCV_BUILD_DIR/bin/opencv_perf_dnn" \
   --gtest_filter='*DeconvolutionCoordinates*' \
   --perf_min_samples=10 --perf_force_samples=30 --perf_threads=1
 ```
 
-The accuracy test uses an independent scatter reference. It covers 2D and 3D,
+The accuracy test has 10 cases and uses an independent scatter reference.
+Each thread count runs in a separate process. The cases cover 2D and 3D,
 groups, static and dynamic weights, bias, overlap, dilation, asymmetric padding,
 output padding, a shape change, and one or four threads. The separate probe
 checks 192 configurations with normal and wide finite input values at both
@@ -96,3 +109,4 @@ Nontrivial 1D full-layer cases failed on the base during test development.
 The failure is in the existing 1D shape and workspace handling. This patch does
 not change that code. Full-layer accuracy and performance claims are limited
 to 2D and 3D. The extracted helper check also covers 1D.
+
